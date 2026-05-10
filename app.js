@@ -1003,28 +1003,27 @@ class SpinWheel {
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      if (confirm('確定要切換房間嗎？目前的進度已自動儲存。')) {
-        // 在嵌入環境中，不使用 reload，改用手動重置介面
-        this.roomCode = null;
-        this.apiUrl = localStorage.getItem('spinWheelApiUrl') || 'https://script.google.com/macros/s/AKfycbzjbFm2jDGzgkkSWtSm0nrno2rWdVwJWblM6q32PbX5iIwEnY4iRAaaaD_xWeaY9OEabg/exec';
-        
-        // 顯示登入畫面，隱藏主畫面
-        document.getElementById('loginOverlay').style.display = 'grid';
-        document.getElementById('app').style.display = 'none';
-        
-        // 嘗試清理網址（不強制，失敗也沒關係）
-        try {
-          const newUrl = new URL(window.location);
-          newUrl.searchParams.delete('room');
-          window.history.pushState({}, '', newUrl);
-        } catch(e) {}
-        
-        // 重新讀取一次房間列表
-        if (typeof window.refreshRoomList === 'function') {
-          window.refreshRoomList();
-        }
-      }
+      const modal = document.getElementById('customConfirmModal');
+      if (modal) modal.classList.add('show');
     });
+
+    const confirmYes = document.getElementById('confirmLogoutYes');
+    const confirmNo = document.getElementById('confirmLogoutNo');
+    const customConfirm = document.getElementById('customConfirmModal');
+
+    if (confirmNo && customConfirm) {
+      confirmNo.addEventListener('click', () => {
+        customConfirm.classList.remove('show');
+      });
+    }
+
+    if (confirmYes) {
+      confirmYes.addEventListener('click', () => {
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('room');
+        window.location.href = newUrl.origin + newUrl.pathname + newUrl.search;
+      });
+    }
 
     document.getElementById('saveAsTemplate').addEventListener('click', () => {
       // 排除掉房間專屬的分數，只存設定
@@ -1137,13 +1136,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   fetchRoomList();
-  window.refreshRoomList = fetchRoomList;
   
   const initApp = (state, room, url) => {
     loginOverlay.style.display = 'none';
     loadingOverlay.style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    new SpinWheel(state, room, url);
+    window.app = new SpinWheel(state, room, url);
   };
 
   // URL 帶有 room 參數時自動載入

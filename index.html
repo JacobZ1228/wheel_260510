@@ -228,6 +228,18 @@
     </div>
   </section>
 
+  <!-- 自製確認視窗 (取代會被 Google Sites 阻擋的 confirm) -->
+  <div id="customConfirmModal" class="modal-backdrop" style="z-index: 200;">
+    <div class="modal" style="width: min(90%, 350px); text-align: center; padding: 30px;">
+      <h3 style="margin-bottom: 20px; color: #8b4a20;">🚪 確定要切換房間嗎？</h3>
+      <p style="margin-bottom: 30px; font-size: 15px; color: #666;">目前的進度已自動儲存。</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="confirmLogoutYes" class="login-btn" style="flex: 1; margin: 0; padding: 12px;">確定</button>
+        <button id="confirmLogoutNo" class="skip-btn" style="flex: 1; margin: 0; padding: 12px; background: #eee;">取消</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
