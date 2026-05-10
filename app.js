@@ -1448,6 +1448,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const loginSettingsBtn = document.getElementById('loginSettingsBtn');
+  if (loginSettingsBtn) {
+    loginSettingsBtn.addEventListener('click', () => {
+      const newUrl = prompt('請輸入雲端 API 網址：', apiUrl);
+      if (newUrl !== null) {
+        apiUrl = newUrl.trim();
+        localStorage.setItem('spinWheelApiUrl', apiUrl);
+        window.showToast('✅ API 網址已更新');
+        fetchRoomList();
+      }
+    });
+  }
+
   // 取得現有房間列表
   const fetchRoomList = async () => {
     if (!apiUrl) return;

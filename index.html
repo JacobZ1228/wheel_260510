@@ -250,6 +250,19 @@
     </div>
   </section>
 
+  <!-- 目標選擇彈窗 (用於 指定加分、奪取分數等卡片) -->
+  <div id="targetPickerModal" class="modal-backdrop" style="z-index: 30001;">
+    <div class="modal" style="width: min(90%, 400px); padding: 25px; border-radius: 24px;">
+      <header class="modal-header" style="background: none; border: none; padding: 0 0 15px 0; justify-content: center;">
+        <div id="targetPickerTitle" class="modal-title" style="font-size: 1.5rem; color: #ff7aa2;">🎯 請選擇組別</div>
+      </header>
+      <div class="modal-body" style="padding: 0; text-align: center;">
+        <p id="targetPickerDesc" style="margin-bottom: 20px; font-weight: 700; color: #8b4a20; line-height: 1.5;">請選擇一個組別來套用效果。</p>
+        <div id="targetPickerBtns" style="display: flex; flex-direction: column; gap: 12px; width: 100%;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 通用型自製確認視窗 -->
   <div id="customConfirmModal" class="modal-backdrop" style="z-index: 30000;">
     <div class="modal" style="width: min(90%, 350px); text-align: center; padding: 30px; border-radius: 20px;">
