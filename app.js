@@ -66,40 +66,160 @@ class AudioSynth {
 }
 
 const defaultChanceCards = [
-  { title: "中統一發票", desc: "運氣爆棚！本組幸運中獎，獲得 +200分。" },
-  { title: "拾金不昧", desc: "路上撿到錢包送警局，獲得 +500分。" },
-  { title: "普天同慶", desc: "財神爺駕到！現場三組全部 +150分。" },
-  { title: "均富卡", desc: "發揮正義感！三組的分數立刻變得和第一名一樣多。" },
-  { title: "互利共贏", desc: "找到好盟友！選一組，兩組一起加 150分。" },
-  { title: "大開口獅子", desc: "獅子大開口！選一組，搶奪對方的 200分。" },
-  { title: "資源共享", desc: "樂於分享！與隨機一組的分數相加後平均分配。" },
-  { title: "指定大紅包", desc: "樂善好施！指定某一組 +200分（不可是自己）。" },
-  { title: "命運PK賽", desc: "選一組進行剪刀石頭布，贏家 +200分。" },
-  { title: "默契考驗", desc: "老師發問，整組同時回答正確，獲得 +300分。" },
-  { title: "智慧結算", desc: "本組每人說一句今天學到的事，獲得 +300分。" },
-  { title: "雙倍衝刺", desc: "氣勢正旺！下一題得分直接 × 2。" },
-  { title: "熱血加碼", desc: "趁勝追擊！下一題答對額外 +150分。" },
-  { title: "再來一次", desc: "運氣正旺，立刻再轉一次轉盤（可累積）。" },
-  { title: "佛心分享", desc: "將本組分數的 10%（四捨五入到百位）平均分給另外兩組。" }
+  { id: 'c1', category: 'chance', name: "中統一發票", description: "發票幸運中獎！本組獲得 +500 分。", type: "addScore", value: 500 },
+  { id: 'c2', category: 'chance', name: "拾金不昧", description: "路上撿到錢包送到警局，獲得好心回報！本組 +600 分。", type: "addScore", value: 600 },
+  { id: 'c3', category: 'chance', name: "普天同慶", description: "今天大家運氣都不錯！三組全部 +600 分。", type: "allTeamsAdd", value: 600 },
+  { id: 'c4', category: 'chance', name: "互利共贏", description: "找到合作夥伴！指定一組，兩組一起 +300 分。", type: "chooseTargetBothAdd", value: 300 },
+  { id: 'c5', category: 'chance', name: "大開口獅子", description: "談判大成功！本組 +400 分，指定一組 -400 分。", type: "stealScore", value: 400 },
+  { id: 'c6', category: 'chance', name: "指定大紅包", description: "發送幸運紅包！指定一組 +600 分（不可指定自己）。", type: "chooseTargetAdd", value: 600 },
+  { id: 'c7', category: 'chance', name: "默契考驗", description: "團隊合作成功！本組獲得 +800 分。", type: "addScore", value: 800 },
+  { id: 'c8', category: 'chance', name: "智慧結算", description: "分享今天學到的知識，本組獲得 +900 分。", type: "addScore", value: 900 },
+  { id: 'c9', category: 'chance', name: "幸運加碼", description: "今天運氣特別好！本組額外獲得 +1000 分。", type: "addScore", value: 1000 },
+  { id: 'c10', category: 'chance', name: "再來一次", description: "好運延續！本組獲得 +700 分，並立刻再轉一次轉盤。", type: "addScoreAndSpinAgain", value: 700 }
 ];
 
 const defaultFateCards = [
-  { title: "違規停車", desc: "收到罰單！本組直接扣 200分。" },
-  { title: "錢包掉在計程車上", desc: "太迷糊了！本組遺失財物，直接扣 300分。" },
-  { title: "繳納綜合所得稅", desc: "該繳稅囉！本組直接扣除現有分數的 10%（四捨五入到百位）。" },
-  { title: "強風大暴雨", desc: "突發天災！本組直接扣 150分，且下一題必須站著回答。" },
-  { title: "踩到香蕉皮", desc: "當眾摔倒，醫藥費扣 100分，並暫停發言一輪。" },
-  { title: "電腦當機", desc: "辛苦寫的作業沒存檔！本組直接扣 250分。" },
-  { title: "劫富濟貧", desc: "本組分數如果是第一名，強制扣 200分 給最後一名的組別。" },
-  { title: "大風吹", desc: "本組與目前分數最低的組別，強制交換分數。" },
-  { title: "請客吃飯", desc: "本組請全班喝飲料，扣 150分 分給另外兩組（各得 75 分）。" },
-  { title: "小偷出沒", desc: "被其他組別聯手針對，隨機一組從你們組裡偷走 150分。" },
-  { title: "下一題得分歸零", desc: "運氣不佳，下一題就算答對，也無法獲得任何分數。" },
-  { title: "雙倍懲罰卡", desc: "下一題如果答錯，扣分直接 × 2。" },
-  { title: "沉默是金", desc: "禁言懲罰！本組下一回合不能討論與回答問題，扣 100分。" },
-  { title: "重新洗牌", desc: "局勢大亂！全部組別的分數加總，重新平均分配。" },
-  { title: "退回起點", desc: "本組分數直接倒扣 400分。" }
+  { id: 'f1', category: 'fate', name: "違規停車", description: "收到停車罰單，本組扣除 -100 分。", type: "subtractScore", value: 100 },
+  { id: 'f2', category: 'fate', name: "錢包掉在計程車上", description: "不小心遺失錢包，本組扣除 -200 分。", type: "subtractScore", value: 200 },
+  { id: 'f3', category: 'fate', name: "繳納綜合所得稅", description: "該繳稅了！本組扣除 -300 分。", type: "subtractScore", value: 300 },
+  { id: 'f4', category: 'fate', name: "強風大暴雨", description: "天氣狀況不佳，本組扣除 -100 分。", type: "subtractScore", value: 100 },
+  { id: 'f5', category: 'fate', name: "踩到香蕉皮", description: "一時失誤差點跌倒，這次沒有扣分。", type: "noEffect", value: 0 },
+  { id: 'f6', category: 'fate', name: "電腦當機", description: "作業忘記存檔，本組扣除 -200 分。", type: "subtractScore", value: 200 },
+  { id: 'f7', category: 'fate', name: "請客吃飯", description: "本組請大家喝飲料，扣除 150 分，另外兩組各獲得 +75 分。", type: "shareToOthers", value: 150, shareValue: 75 },
+  { id: 'f8', category: 'fate', name: "小偷出沒", description: "分數被偷偷拿走！本組扣除 -100 分。", type: "subtractScore", value: 100 },
+  { id: 'f9', category: 'fate', name: "倒楣連連", description: "今天狀況不太順，本組額外扣除 -200 分。", type: "subtractScore", value: 200 },
+  { id: 'f10', category: 'fate', name: "逆轉命運", description: "意外獲得補助！本組直接獲得 +800 分。", type: "addScore", value: 800 }
 ];
+
+/**
+ * 輔助函式：統一更新分數
+ */
+function updateTeamScore(spinWheel, team, amount, reason) {
+  if (!team) return;
+  const change = Math.round(Number(amount));
+  team.score = (team.score || 0) + change;
+  spinWheel.saveState();
+  spinWheel.renderScoreboard();
+  spinWheel.renderRanking();
+  if (reason) {
+    const sign = change >= 0 ? '+' : '';
+    window.showToast(`${reason}: ${team.name} ${sign}${change} 分`);
+  }
+}
+
+/**
+ * 彈出「選擇目標組別」彈窗
+ */
+function showTargetPicker({ title, desc, allTeams, currentId, canPickSelf = false, onSelect }) {
+  const modal = document.getElementById('targetPickerModal');
+  const titleEl = document.getElementById('targetPickerTitle');
+  const descEl = document.getElementById('targetPickerDesc');
+  const btnsEl = document.getElementById('targetPickerBtns');
+
+  titleEl.textContent = title;
+  descEl.textContent = desc;
+  btnsEl.innerHTML = '';
+
+  allTeams.forEach(team => {
+    const isSelf = team.id === currentId;
+
+    const btn = document.createElement('button');
+    btn.textContent = team.name + (isSelf ? ' (自己)' : '');
+    btn.className = 'spin-btn';
+    btn.style.margin = '0';
+    
+    if (!canPickSelf && isSelf) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    }
+
+    btn.addEventListener('click', () => {
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      onSelect(team);
+    });
+    btnsEl.appendChild(btn);
+  });
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+/**
+ * 核心功能：執行卡牌效果
+ */
+function applyCardEffect(card, currentTeam) {
+  const spinWheel = window.app;
+  const allTeams = spinWheel ? spinWheel.state.teams : [];
+  const cardName = card.name || card.title || '卡片';
+  const type = card.type || 'noEffect'; // 預設為無效果以防報錯
+
+  if (!currentTeam && type !== 'allTeamsAdd') {
+    window.showToast("⚠️ 請先選擇組別再執行卡片效果！");
+    return;
+  }
+
+  switch (type) {
+    case 'addScore':
+      updateTeamScore(spinWheel, currentTeam, card.value, cardName);
+      break;
+    case 'subtractScore':
+      updateTeamScore(spinWheel, currentTeam, -card.value, cardName);
+      break;
+    case 'allTeamsAdd':
+      allTeams.forEach(t => updateTeamScore(spinWheel, t, card.value, null));
+      window.showToast(`✨ ${cardName}: 所有組別各 +${card.value}！`);
+      break;
+    case 'noEffect':
+      window.showToast(`🍃 ${cardName}: 什麼事都沒發生。`);
+      break;
+    case 'shareToOthers':
+      updateTeamScore(spinWheel, currentTeam, -card.value, null);
+      allTeams.filter(t => t.id !== currentTeam.id).forEach(t => {
+        updateTeamScore(spinWheel, t, card.shareValue || 0, null);
+      });
+      window.showToast(`🎁 ${cardName}: 分享給其他組別！`);
+      break;
+    case 'chooseTargetBothAdd':
+      showTargetPicker({
+        title: cardName, desc: card.description || card.desc, allTeams, currentId: currentTeam.id, canPickSelf: false,
+        onSelect(target) {
+          updateTeamScore(spinWheel, currentTeam, card.value, null);
+          updateTeamScore(spinWheel, target, card.value, null);
+          window.showToast(`🤝 ${cardName}: 兩組各 +${card.value}`);
+        }
+      });
+      break;
+    case 'stealScore':
+      showTargetPicker({
+        title: cardName, desc: card.description || card.desc, allTeams, currentId: currentTeam.id, canPickSelf: false,
+        onSelect(target) {
+          updateTeamScore(spinWheel, currentTeam, card.value, null);
+          updateTeamScore(spinWheel, target, -card.value, null);
+          window.showToast(`🦁 ${cardName}: 奪取 ${target.name} 的 ${card.value} 分！`);
+        }
+      });
+      break;
+    case 'chooseTargetAdd':
+      showTargetPicker({
+        title: cardName, desc: card.description || card.desc, allTeams, currentId: currentTeam.id, canPickSelf: false,
+        onSelect(target) {
+          updateTeamScore(spinWheel, target, card.value, cardName);
+        }
+      });
+      break;
+    case 'addScoreAndSpinAgain':
+      updateTeamScore(spinWheel, currentTeam, card.value, null);
+      window.showConfirm("🎡 " + cardName, "請再轉一次轉盤！", () => {
+        document.getElementById('cardsModal').classList.remove('show');
+      });
+      break;
+    default:
+      window.showToast(`ℹ️ 此效果下一步處理 (${type})`);
+      console.log("No automation for type:", type);
+      break;
+  }
+}
 
 class CardsGame {
   constructor(synth) {
@@ -124,13 +244,14 @@ class CardsGame {
     return arr;
   }
 
-  open(type, cardsDataRaw) { // type: 'chance' | 'fate'
+  open(type, cardsDataRaw, currentTeam, allTeams, spinWheel) { // type: 'chance' | 'fate'
     const isFate = type === 'fate';
     this.titleEl.textContent = isFate ? "請選擇一張命運卡！" : "請選擇一張機會卡！";
     this.grid.innerHTML = '';
     this.closeBtn.style.display = 'none';
 
     const cardsData = this.shuffle(cardsDataRaw);
+    let picked = false;
 
     cardsData.forEach(data => {
       const card = document.createElement('div');
@@ -147,11 +268,11 @@ class CardsGame {
       
       const title = document.createElement('div');
       title.className = 'card-back-title';
-      title.textContent = data.title;
+      title.textContent = data.name || data.title || "無標題";
       
       const desc = document.createElement('div');
       desc.className = 'card-back-desc';
-      desc.textContent = data.desc;
+      desc.textContent = data.description || data.desc || "無描述";
 
       back.appendChild(title);
       back.appendChild(desc);
@@ -160,18 +281,26 @@ class CardsGame {
       card.appendChild(inner);
 
       card.addEventListener('click', () => {
-        if (card.classList.contains('flipped') || card.classList.contains('disabled')) return;
+        if (picked || card.classList.contains('flipped') || card.classList.contains('disabled')) return;
+        picked = true;
         
         card.classList.add('flipped');
         this.synth.playWin();
         
         document.querySelectorAll('.card').forEach(c => {
-          if (c !== card) c.classList.add('disabled');
+          if (c !== card) {
+            c.classList.add('disabled');
+            c.style.opacity = '0.4';
+          }
         });
 
         setTimeout(() => {
-          this.closeBtn.style.display = 'inline-block';
-        }, 1000);
+          applyCardEffect(data, currentTeam);
+          if (data.type !== 'addScoreAndSpinAgain') {
+            this.closeBtn.style.display = 'inline-block';
+            this.closeBtn.textContent = '確定，回轉盤';
+          }
+        }, 800);
       });
 
       this.grid.appendChild(card);
@@ -286,6 +415,10 @@ class SpinWheel {
     this.spinBtn = document.getElementById('spinBtn');
     this.resultToast = document.getElementById('resultToast');
     this.pointer = document.getElementById('pointer');
+    this.roomDisplay = document.getElementById('roomDisplay');
+
+    this.state = initialState;
+    this.migrateCards();
 
     this.themes = {
       candy: ['#b5ebd1', '#fcd581', '#f5b493', '#a7def0', '#bfe854', '#79cf9f'],
@@ -294,7 +427,6 @@ class SpinWheel {
     };
     this.icons = ['⭐', '🎁', '🍀', '💎', '🌙', '🔮', '✨', '🎀', '🌟', '🧸'];
 
-    this.state = initialState;
     this.roomCode = roomCode;
     this.apiUrl = apiUrl;
     
@@ -305,7 +437,7 @@ class SpinWheel {
     this.synth = new AudioSynth();
     this.cardsGame = new CardsGame(this.synth);
     this.scoreCalc = new ScoreCalc(this);
-    this.size = 900; // Base size for drawing coordinate system
+    this.size = 900; 
     
     this.saveTimeout = null;
 
@@ -313,6 +445,39 @@ class SpinWheel {
     this.initUI();
     this.bindEvents();
     this.draw();
+  }
+
+  migrateCards() {
+    // 自動偵測舊版卡片並強制更新為新版 10+10 組合
+    const isOldFormat = (cards) => {
+      if (!Array.isArray(cards) || cards.length === 0) return true;
+      // 如果任何一張卡片沒有 id 或沒有 name (舊版是 title)，就視為舊版
+      return cards.some(card => !card.id || !card.name);
+    };
+
+    if (isOldFormat(this.state.chanceCards)) {
+      console.log("Detecting old chance cards, performing force migration...");
+      this.state.chanceCards = JSON.parse(JSON.stringify(defaultChanceCards));
+    }
+
+    if (isOldFormat(this.state.fateCards)) {
+      console.log("Detecting old fate cards, performing force migration...");
+      this.state.fateCards = JSON.parse(JSON.stringify(defaultFateCards));
+    }
+
+    // 確保每張卡片都有基本欄位 (Double Check)
+    const ensureFields = (cards) => {
+      if (!Array.isArray(cards)) return;
+      cards.forEach(card => {
+        if (!card.name && card.title) card.name = card.title;
+        if (!card.description && card.desc) card.description = card.desc;
+        if (!card.type) card.type = 'noEffect';
+      });
+    };
+    ensureFields(this.state.chanceCards);
+    ensureFields(this.state.fateCards);
+    
+    this.saveState(); // 立即儲存遷移後的結果
   }
 
   saveState() {
@@ -385,10 +550,18 @@ class SpinWheel {
     
     document.getElementById('rankingVisibleSelect').value = this.state.rankingVisible ? 'true' : 'false';
     
+    const fontSizeRatio = this.state.fontSizeRatio || 1.0;
+    document.getElementById('fontSizeRatioInput').value = fontSizeRatio;
+    document.getElementById('fontSizeRatioLabel').textContent = fontSizeRatio.toFixed(1);
+    
     if (!this.state.rankingVisible) {
       document.getElementById('rankingPanel').classList.add('hidden');
     } else {
       document.getElementById('rankingPanel').classList.remove('hidden');
+    }
+
+    if (this.roomDisplay) {
+      this.roomDisplay.textContent = this.roomCode ? `🏠 房間：${this.roomCode}` : '💻 單機模式';
     }
 
     this.renderSegmentsUI();
@@ -466,6 +639,10 @@ class SpinWheel {
     document.getElementById('rankingPositionSelect').value = this.state.rankingPosition;
     document.getElementById('rankingSizeInput').value = this.state.rankingSize;
     document.getElementById('rankingSizeLabel').textContent = this.state.rankingSize.toFixed(1);
+
+    const fontSizeRatio = this.state.fontSizeRatio || 1.0;
+    document.getElementById('fontSizeRatioInput').value = fontSizeRatio;
+    document.getElementById('fontSizeRatioLabel').textContent = fontSizeRatio.toFixed(1);
     
     const apiUrlInput = document.getElementById('apiUrlInput');
     if (apiUrlInput) apiUrlInput.value = this.apiUrl || '';
@@ -614,9 +791,10 @@ class SpinWheel {
       this.ctx.rotate(start + arc / 2);
 
       const maxWidth = 190;
-      let fontSize = 44;
+      let fontSize = Math.floor(44 * (this.state.fontSizeRatio || 1.0));
       this.ctx.font = `900 ${fontSize}px Nunito, Noto Sans TC, sans-serif`;
-      while (this.ctx.measureText(seg).width > maxWidth && fontSize > 24) {
+      const minFontSize = Math.floor(24 * (this.state.fontSizeRatio || 1.0));
+      while (this.ctx.measureText(seg).width > maxWidth && fontSize > minFontSize) {
         fontSize -= 2;
         this.ctx.font = `900 ${fontSize}px Nunito, Noto Sans TC, sans-serif`;
       }
@@ -677,65 +855,114 @@ class SpinWheel {
     this.spinBtn.textContent = '轉動中… ✨';
 
     const startRotation = this.currentRotation;
-    const extra = (this.state.intensity + Math.random() * 4) * 360 + Math.random() * 360;
+    // 增加基礎圈數，讓整體轉動時間更有感
+    const extra = (this.state.intensity + 4 + Math.random() * 4) * 360 + Math.random() * 360;
     const endRotation = startRotation + extra;
     const totalTime = this.state.duration * 1000;
     const startTime = performance.now();
     
     this.lastTickSegment = this.getResultIndex(startRotation);
 
+    // 準備 3D 浮現效果
+    const wheelWrap = this.canvas.parentElement;
+    wheelWrap.style.transition = 'transform 0.4s ease-out, filter 0.4s ease-out';
+    wheelWrap.style.transform = 'scale(1.03)';
+    wheelWrap.style.filter = 'drop-shadow(0 35px 40px rgba(91,46,20,.35))';
+
     const animate = (now) => {
       const p = Math.min((now - startTime) / totalTime, 1);
-      // Custom easing out
-      const eased = 1 - Math.pow(1 - p, 4);
+      // 升級為 Quintic 減速曲線：前段爆發強，後段滑行長
+      const eased = 1 - Math.pow(1 - p, 5);
+      
+      const previousRotation = this.currentRotation;
       this.currentRotation = startRotation + (endRotation - startRotation) * eased;
+      
+      // 計算瞬時速度 (每影格旋轉角度)
+      const velocity = this.currentRotation - previousRotation;
+      
+      // 動態模糊：減輕模糊程度，避免視覺過度誇張
+      const blurAmount = Math.min(velocity * 0.15, 1.5);
       this.canvas.style.transform = `rotate(${this.currentRotation}deg)`;
+      this.canvas.style.filter = `blur(${blurAmount}px)`;
 
-      // Tick sound logic
+      // 檢查是否經過選項交界
       const currentSegment = this.getResultIndex(this.currentRotation);
       if (currentSegment !== this.lastTickSegment) {
         this.synth.playTick();
         this.lastTickSegment = currentSegment;
         
-        // Pointer tick animation - 改用更輕量的方式
-        this.pointer.classList.remove('tick');
-        void this.pointer.offsetWidth; // 觸發重繪以重啟動畫
-        this.pointer.classList.add('tick');
+        // 指針物理打擊回饋
+        // 速度快時指針被緊壓 (角度大)，速度慢時回彈明顯
+        const hitAngle = Math.min(12 + velocity * 1.5, 35);
+        this.pointer.style.transition = 'none';
+        this.pointer.style.transform = `translateX(-50%) rotate(-${hitAngle}deg)`;
+        
+        // 短暫延遲後釋放指針，模擬彈簧回彈
+        requestAnimationFrame(() => {
+          this.pointer.style.transition = 'transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          this.pointer.style.transform = 'translateX(-50%) rotate(0deg)';
+        });
       }
 
       if (p < 1) {
         requestAnimationFrame(animate);
       } else {
+        // 恢復正常狀態
+        this.canvas.style.filter = 'blur(0px)';
+        wheelWrap.style.transform = 'scale(1)';
+        wheelWrap.style.filter = ''; // 會吃 CSS 的預設 drop-shadow
+        
         const idx = this.getResultIndex(this.currentRotation);
         this.bounceWheel();
+        
         setTimeout(() => {
           const resultText = this.state.segments[idx];
+          const teamIdx = this.state.teams.findIndex(t => t.id === this.state.selectedTeamId);
+          const currentTeam = teamIdx !== -1 ? this.state.teams[teamIdx] : null;
+
           if (resultText.includes('機會') || resultText.includes('命運')) {
             const type = resultText.includes('命運') ? 'fate' : 'chance';
-            this.cardsGame.open(type, type === 'fate' ? this.state.fateCards : this.state.chanceCards);
+            this.cardsGame.open(
+              type, 
+              type === 'fate' ? this.state.fateCards : this.state.chanceCards,
+              currentTeam,
+              this.state.teams,
+              this
+            );
           } else {
             const match = resultText.match(/-?\d+/);
-            if (match) {
-              const num = parseInt(match[0], 10);
-              const teamIdx = this.state.teams.findIndex(t => t.id === this.state.selectedTeamId);
-              if (teamIdx !== -1) {
-                this.state.teams[teamIdx].score += num;
-                this.saveState();
-                this.renderScoreboard();
-                
-                setTimeout(() => {
-                  const scoreEl = document.getElementById(`team-score-${this.state.selectedTeamId}`);
-                  if (scoreEl) {
-                    scoreEl.classList.add('animating');
-                    setTimeout(() => scoreEl.classList.remove('animating'), 400);
-                  }
-                }, 50);
+            if (match && currentTeam) {
+              let num = parseInt(match[0], 10);
+              
+              // 應用特殊加成/懲罰
+              if (num > 0) {
+                if (currentTeam.nextScoreMultiplier !== undefined) num *= currentTeam.nextScoreMultiplier;
+                if (currentTeam.nextScoreBonus !== undefined) num += currentTeam.nextScoreBonus;
+              } else if (num < 0) {
+                if (currentTeam.nextPenaltyMultiplier !== undefined) num *= currentTeam.nextPenaltyMultiplier;
               }
+
+              // 重置一次性效果
+              delete currentTeam.nextScoreMultiplier;
+              delete currentTeam.nextScoreBonus;
+              delete currentTeam.nextPenaltyMultiplier;
+
+              currentTeam.score += num;
+              this.saveState();
+              this.renderScoreboard();
+              
+              setTimeout(() => {
+                const scoreEl = document.getElementById(`team-score-${this.state.selectedTeamId}`);
+                if (scoreEl) {
+                  scoreEl.classList.add('animating');
+                  setTimeout(() => scoreEl.classList.remove('animating'), 400);
+                }
+              }, 50);
             }
             this.synth.playWin();
             this.showResult(resultText);
           }
-        }, 260);
+        }, 400); // 延長等待時間讓 bounce 動畫跑完
         this.spinning = false;
         this.spinBtn.disabled = false;
         this.spinBtn.textContent = '🎡 轉動轉盤！';
@@ -746,12 +973,22 @@ class SpinWheel {
   }
 
   bounceWheel() {
+    // 整體彈跳收放
+    this.canvas.parentElement.animate([
+      { transform: 'scale(1.02)' },
+      { transform: 'scale(0.97)' },
+      { transform: 'scale(1.01)' },
+      { transform: 'scale(1)' }
+    ], { duration: 550, easing: 'cubic-bezier(.18,.89,.32,1.28)' });
+
+    // 旋轉角吸附與震盪
     this.canvas.animate([
       { transform: `rotate(${this.currentRotation}deg)` },
-      { transform: `rotate(${this.currentRotation + 1.5}deg)` },
-      { transform: `rotate(${this.currentRotation - 1.0}deg)` },
+      { transform: `rotate(${this.currentRotation + 3}deg)` },
+      { transform: `rotate(${this.currentRotation - 1.5}deg)` },
+      { transform: `rotate(${this.currentRotation + 0.5}deg)` },
       { transform: `rotate(${this.currentRotation}deg)` }
-    ], { duration: 400, easing: 'cubic-bezier(.18,.89,.32,1.28)' });
+    ], { duration: 550, easing: 'cubic-bezier(.18,.89,.32,1.28)' });
   }
 
   showResult(text) {
@@ -775,6 +1012,17 @@ class SpinWheel {
       setTimeout(() => el.remove(), 3000);
     }
     document.body.appendChild(container);
+  }
+
+  shuffleSegments() {
+    const arr = this.state.segments;
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    this.saveState();
+    this.renderSegmentsUI();
+    this.draw();
   }
 
   renderSegmentsUI() {
@@ -826,10 +1074,10 @@ class SpinWheel {
 
       const titleInput = document.createElement('input');
       titleInput.type = 'text';
-      titleInput.value = card.title;
-      titleInput.placeholder = `標題 ${index + 1}`;
+      titleInput.value = card.name || card.title || "";
+      titleInput.placeholder = `名稱 ${index + 1}`;
       titleInput.addEventListener('input', e => {
-        card.title = e.target.value;
+        card.name = e.target.value;
         this.saveState();
       });
 
@@ -847,10 +1095,10 @@ class SpinWheel {
       header.append(titleInput, del);
 
       const descInput = document.createElement('textarea');
-      descInput.value = card.desc;
+      descInput.value = card.description || card.desc || "";
       descInput.placeholder = '卡片效果說明...';
       descInput.addEventListener('input', e => {
-        card.desc = e.target.value;
+        card.description = e.target.value;
         this.saveState();
       });
 
@@ -954,7 +1202,14 @@ class SpinWheel {
       document.getElementById('rankingPanel').style.transformOrigin = 'top right';
       this.saveState();
     });
-
+    
+    document.getElementById('fontSizeRatioInput').addEventListener('input', e => {
+      this.state.fontSizeRatio = Number(e.target.value);
+      document.getElementById('fontSizeRatioLabel').textContent = this.state.fontSizeRatio.toFixed(1);
+      this.saveState();
+      this.draw();
+    });
+    
     document.getElementById('rankingPositionSelect').addEventListener('change', e => {
       this.state.rankingPosition = e.target.value;
       this.updateRankingPositionClass(this.state.rankingPosition);
@@ -980,14 +1235,33 @@ class SpinWheel {
       this.draw();
     });
 
+    document.getElementById('shuffleSegments').addEventListener('click', () => {
+      this.shuffleSegments();
+      window.showToast('🎲 已隨機洗牌選項位置！');
+    });
+
     document.getElementById('addChance').addEventListener('click', () => {
-      this.state.chanceCards.push({ title: "新機會卡", desc: "請輸入效果說明" });
+      this.state.chanceCards.push({ 
+        id: 'c' + Date.now(), 
+        category: 'chance', 
+        name: "新機會卡", 
+        description: "請輸入效果說明",
+        type: "addScore",
+        value: 0
+      });
       this.saveState();
       this.renderCardsUI('chance');
     });
 
     document.getElementById('addFate').addEventListener('click', () => {
-      this.state.fateCards.push({ title: "新命運卡", desc: "請輸入效果說明" });
+      this.state.fateCards.push({ 
+        id: 'f' + Date.now(), 
+        category: 'fate', 
+        name: "新命運卡", 
+        description: "請輸入效果說明",
+        type: "subtractScore",
+        value: 0
+      });
       this.saveState();
       this.renderCardsUI('fate');
     });
@@ -1082,7 +1356,8 @@ const defaultState = {
   rankingTitle: '🏆 即時戰況',
   rankingSize: 1.0,
   rankingVisible: true,
-  rankingPosition: 'top-right'
+  rankingPosition: 'top-right',
+  fontSizeRatio: 1.0
 };
 
 function getLocalState() {

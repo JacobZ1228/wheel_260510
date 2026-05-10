@@ -47,6 +47,7 @@
     <main id="app" class="app">
       <section class="title-card">
         <h1 id="gameTitle">轉轉樂</h1>
+        <p id="roomDisplay" class="room-display"></p>
       </section>
 
       <section id="scoreboard" class="scoreboard" aria-label="記分板"></section>
@@ -135,6 +136,10 @@
             <input id="rankingSizeInput" type="range" min="0.5" max="1.5" step="0.1" value="1.0">
           </div>
           <div class="field">
+            <label for="fontSizeRatioInput">轉盤文字比例：<span id="fontSizeRatioLabel">1.0</span> x</label>
+            <input id="fontSizeRatioInput" type="range" min="0.5" max="2.0" step="0.1" value="1.0">
+          </div>
+          <div class="field">
             <label for="themeSelect">視覺風格</label>
             <select id="themeSelect">
               <option value="candy">糖果可愛</option>
@@ -163,19 +168,28 @@
 
         <div id="pane-segments" class="pane">
           <div id="segmentsContainer"></div>
-          <button id="addSegment" class="add-btn">＋ 新增選項</button>
+          <div style="display: flex; gap: 10px;">
+            <button id="addSegment" class="add-btn" style="flex: 2;">＋ 新增選項</button>
+            <button id="shuffleSegments" class="add-btn" style="flex: 1; background: #6BCB77; box-shadow: 0 5px 0 #3a9c4b;">🎲 洗牌</button>
+          </div>
         </div>
 
         <div id="pane-chance" class="pane">
           <div class="hint" style="margin-bottom: 12px; margin-top: 0;">機會卡內容，當轉到「機會」時會隨機洗牌顯示。</div>
           <div id="chanceContainer"></div>
-          <button id="addChance" class="add-btn">＋ 新增機會卡</button>
+          <div style="display: flex; gap: 10px;">
+            <button id="addChance" class="add-btn">＋ 新增機會卡</button>
+            <button id="resetChance" class="add-btn reset-cards-btn" style="background: #ff7a92;">↺ 重設預設卡</button>
+          </div>
         </div>
 
         <div id="pane-fate" class="pane">
           <div class="hint" style="margin-bottom: 12px; margin-top: 0;">命運卡內容，當轉到「命運」時會隨機洗牌顯示。</div>
           <div id="fateContainer"></div>
-          <button id="addFate" class="add-btn">＋ 新增命運卡</button>
+          <div style="display: flex; gap: 10px;">
+            <button id="addFate" class="add-btn">＋ 新增命運卡</button>
+            <button id="resetFate" class="add-btn reset-cards-btn" style="background: #ff7a92;">↺ 重設預設卡</button>
+          </div>
         </div>
 
         <div id="pane-animation" class="pane">
