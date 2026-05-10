@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>可愛轉轉樂</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 房間登入與載入畫面 -->
+  <div id="roomLoginOverlay" class="modal-backdrop show" style="z-index: 9999;">
+    <div class="modal" role="dialog" aria-label="房間登入" style="max-width: 400px;">
+      <header class="modal-header">
+        <div class="modal-title">🚪 輸入房間代碼</div>
+      </header>
+      <div class="modal-body" style="text-align: center; padding: 30px 20px;">
+        <p style="margin-bottom: 20px; font-weight: 700; color: #8b4a20;">請輸入專屬代碼，載入或建立班級紀錄。</p>
+        <input type="text" id="roomCodeInput" placeholder="例如：class101" style="font-size: 20px; text-align: center; width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ff7aa2; margin-bottom: 20px; outline: none; transition: border-color 0.2s;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="joinRoomBtn" class="spin-btn" style="font-size: 18px; padding: 12px; width: 100%;">連線進入房間</button>
+          <button id="skipRoomBtn" class="add-btn" style="font-size: 16px; padding: 10px; background: #f0f0f0; color: #888; border: none; box-shadow: none;">先不連線 (單機模式)</button>
+        </div>
+        <div id="existingRoomsSection" style="margin-top: 25px; display: none; text-align: left; border-top: 1px solid #eee; padding-top: 15px;">
+          <div style="font-size: 14px; color: #999; margin-bottom: 10px; font-weight: 800;">📂 現有房間列表：</div>
+          <div id="roomList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="modal-backdrop" style="z-index: 10000; display: none;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+      <div style="font-size: 40px; margin-bottom: 16px;">🎡</div>
+      <div style="font-size: 24px; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: pulse 1s infinite alternate;">資料同步中...</div>
+    </div>
+  </div>
+
+  <div class="layout-wrapper">
+    <main class="app">
+    <section class="title-card">
+      <h1 id="gameTitle">轉轉樂</h1>
+    </section>
+
+    <section id="scoreboard" class="scoreboard" aria-label="記分板"></section>
+
+
+    <section class="stage" aria-label="轉盤區">
+      <div class="wheel-shadow"></div>
+      <div class="sparkle s1">⭐</div>
+      <div class="sparkle s2">✨</div>
+      <div class="sparkle s3">💫</div>
+      <div class="sparkle s4">🌟</div>
+
+      <svg id="pointer" class="pointer" viewBox="0 0 80 96" aria-hidden="true">
+        <path d="M40 91 C34 74 12 45 12 22 C12 9 24 3 40 3 C56 3 68 9 68 22 C68 45 46 74 40 91Z" fill="#ff7aa2" stroke="#8b4a20" stroke-width="5" />
+        <circle cx="40" cy="24" r="17" fill="#fff3bd" stroke="#8b4a20" stroke-width="4" />
+        <path d="M40 11 L44 20 L54 21 L46 28 L49 38 L40 32 L31 38 L34 28 L26 21 L36 20Z" fill="#ffc857" />
+      </svg>
+
+      <div class="wheel-wrap">
+        <canvas id="wheel"></canvas>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button id="spinBtn" class="spin-btn">🎡 轉動轉盤！</button>
+      <button id="logoutBtn" class="setting-btn" title="切換房間" style="background: #a66cff;">🚪</button>
+      <button id="rankingToggleBtn" class="setting-btn" aria-label="顯示/隱藏排行榜">🏆</button>
+      <button id="settingBtn" class="setting-btn" aria-label="設定">⚙</button>
+    </section>
+  </main>
+
+  <aside id="rankingPanel" class="ranking-panel">
+    <h2 id="rankingTitle" class="ranking-title">🏆 即時戰況</h2>
+    <div id="rankingList" class="ranking-list"></div>
+  </aside>
+</div>
+
+<div id="resultToast" class="result-toast"></div>
+
+  <section id="settingsModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="轉盤設定">
+      <header class="modal-header">
+        <div class="modal-title">⚙️ 轉盤設定</div>
+        <button id="closeModal" class="close-btn">×</button>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="basic">版面</button>
+        <button class="tab" data-tab="teams">組別</button>
+        <button class="tab" data-tab="segments">選項</button>
+        <button class="tab" data-tab="chance">機會卡</button>
+        <button class="tab" data-tab="fate">命運卡</button>
+        <button class="tab" data-tab="animation">動畫</button>
+      </nav>
+
+      <div class="modal-body">
+        <div id="pane-basic" class="pane active">
+          <div class="field">
+            <label for="titleInput">轉盤主題名稱</label>
+            <input id="titleInput" type="text" value="轉轉樂">
+          </div>
+          <div class="field">
+            <label for="rankingTitleInput">排行榜名稱</label>
+            <input id="rankingTitleInput" type="text" value="🏆 即時戰況">
+          </div>
+          <div class="field">
+            <label for="rankingVisibleSelect">顯示即時戰況</label>
+            <select id="rankingVisibleSelect">
+              <option value="true">開啟顯示</option>
+              <option value="false">隱藏</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rankingPositionSelect">排行榜位置</label>
+            <select id="rankingPositionSelect">
+              <option value="top-right">右上角</option>
+              <option value="top-left">左上角</option>
+              <option value="bottom-right">右下角</option>
+              <option value="bottom-left">左下角</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rankingSizeInput">排行榜比例：<span id="rankingSizeLabel">1.0</span> x</label>
+            <input id="rankingSizeInput" type="range" min="0.5" max="1.5" step="0.1" value="1.0">
+          </div>
+          <div class="field">
+            <label for="themeSelect">視覺風格</label>
+            <select id="themeSelect">
+              <option value="candy">糖果可愛</option>
+              <option value="toy">玩具樂園</option>
+              <option value="forest">森林童話</option>
+            </select>
+          </div>
+          <div class="hint">建議：文字不要太長，每格 2～5 個字最漂亮。特殊選項可以用「機會」「命運」「再一次」。</div>
+          <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #eee;">
+          <div class="field">
+            <label for="apiUrlInput">雲端資料庫 API 網址 (Google Apps Script)</label>
+            <input id="apiUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="hint">填入此網址後，所有變更將會自動儲存到 Google 試算表中！</div>
+          <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #eee;">
+          <div style="display: flex; gap: 10px;">
+            <button id="saveAsTemplate" class="add-btn" style="flex: 1; background: #6BCB77; border-radius: 12px; padding: 12px; font-weight: 800;">📌 設為新房間初始值</button>
+            <button id="resetApp" class="delete-btn" style="flex: 1; border-radius: 12px; padding: 12px; font-weight: 800;">🗑️ 重設所有紀錄</button>
+          </div>
+        </div>
+
+        <div id="pane-teams" class="pane">
+          <div class="hint" style="margin-bottom: 12px; margin-top: 0;">點擊主畫面的組別即可切換。轉盤轉中數字時會自動加分到該組別。</div>
+          <div id="teamsContainer"></div>
+        </div>
+
+        <div id="pane-segments" class="pane">
+          <div id="segmentsContainer"></div>
+          <button id="addSegment" class="add-btn">＋ 新增選項</button>
+        </div>
+
+        <div id="pane-chance" class="pane">
+          <div class="hint" style="margin-bottom: 12px; margin-top: 0;">機會卡內容，當轉到「機會」時會隨機洗牌顯示。</div>
+          <div id="chanceContainer"></div>
+          <button id="addChance" class="add-btn">＋ 新增機會卡</button>
+        </div>
+
+        <div id="pane-fate" class="pane">
+          <div class="hint" style="margin-bottom: 12px; margin-top: 0;">命運卡內容，當轉到「命運」時會隨機洗牌顯示。</div>
+          <div id="fateContainer"></div>
+          <button id="addFate" class="add-btn">＋ 新增命運卡</button>
+        </div>
+
+        <div id="pane-animation" class="pane">
+          <div class="field">
+            <label for="durationInput">轉動時間：<span id="durationLabel">4</span> 秒</label>
+            <input id="durationInput" type="range" min="2" max="8" step="0.5" value="4">
+          </div>
+          <div class="field">
+            <label for="intensityInput">轉動強度：<span id="intensityLabel">6</span></label>
+            <input id="intensityInput" type="range" min="2" max="10" step="1" value="6">
+          </div>
+          <div class="hint">時間越長越有儀式感；強度越高，會轉更多圈。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 分數計算機彈窗 -->
+  <section id="calcModal" class="modal-backdrop" aria-hidden="true">
+    <div class="calc-modal">
+      <header class="calc-header">
+        <div id="calcTeamName" class="calc-team-name">組別分數</div>
+        <button id="closeCalc" class="close-btn">×</button>
+      </header>
+      <div class="calc-display">
+        <div id="calcCurrent" class="calc-current">目前: 0</div>
+        <div id="calcInput" class="calc-input">0</div>
+      </div>
+      <div class="calc-grid">
+        <button class="calc-btn op" data-val="AC">AC</button>
+        <button class="calc-btn op" data-val="÷">÷</button>
+        <button class="calc-btn op" data-val="×">×</button>
+        <button class="calc-btn op" data-val="-">-</button>
+        
+        <button class="calc-btn num" data-val="7">7</button>
+        <button class="calc-btn num" data-val="8">8</button>
+        <button class="calc-btn num" data-val="9">9</button>
+        <button class="calc-btn op plus" data-val="+">+</button>
+        
+        <button class="calc-btn num" data-val="4">4</button>
+        <button class="calc-btn num" data-val="5">5</button>
+        <button class="calc-btn num" data-val="6">6</button>
+        <button class="calc-btn num" data-val="0">0</button>
+        
+        <button class="calc-btn num" data-val="1">1</button>
+        <button class="calc-btn num" data-val="2">2</button>
+        <button class="calc-btn num" data-val="3">3</button>
+        <button id="confirmCalc" class="calc-btn confirm">OK</button>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="cardsModal" class="modal-backdrop" aria-hidden="true">
+    <div class="cards-modal-content">
+      <h2 id="cardsModalTitle" class="cards-title">請選擇一張機會卡！</h2>
+      <div id="cardsGrid" class="cards-grid"></div>
+      <button id="closeCardsModal" class="spin-btn" style="display: none; margin-top: 24px;">回轉盤</button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
