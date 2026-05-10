@@ -1004,10 +1004,25 @@ class SpinWheel {
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       if (confirm('確定要切換房間嗎？目前的進度已自動儲存。')) {
-        const newUrl = new URL(window.location);
-        newUrl.searchParams.delete('room');
-        window.history.pushState({}, '', newUrl);
-        location.reload();
+        // 在嵌入環境中，不使用 reload，改用手動重置介面
+        this.roomCode = null;
+        this.apiUrl = localStorage.getItem('spinWheelApiUrl') || 'https://script.google.com/macros/s/AKfycbzjbFm2jDGzgkkSWtSm0nrno2rWdVwJWblM6q32PbX5iIwEnY4iRAaaaD_xWeaY9OEabg/exec';
+        
+        // 顯示登入畫面，隱藏主畫面
+        document.getElementById('loginOverlay').style.display = 'grid';
+        document.getElementById('app').style.display = 'none';
+        
+        // 嘗試清理網址（不強制，失敗也沒關係）
+        try {
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.delete('room');
+          window.history.pushState({}, '', newUrl);
+        } catch(e) {}
+        
+        // 重新讀取一次房間列表
+        if (typeof window.refreshRoomList === 'function') {
+          window.refreshRoomList();
+        }
       }
     });
 
@@ -1122,11 +1137,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   fetchRoomList();
+  window.refreshRoomList = fetchRoomList;
   
   const initApp = (state, room, url) => {
     loginOverlay.style.display = 'none';
     loadingOverlay.style.display = 'none';
-    window.app = new SpinWheel(state, room, url);
+    document.getElementById('app').style.display = 'flex';
+    new SpinWheel(state, room, url);
   };
 
   // URL 帶有 room 參數時自動載入
