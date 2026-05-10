@@ -330,8 +330,10 @@ class SpinWheel {
     this.saveTimeout = setTimeout(async () => {
       if (!this.apiUrl || !this.roomCode) return;
       try {
-        // 使用 no-cors 模式來避開 GAS 的 CORS 限制
-        await fetch(this.apiUrl, {
+        // 強制將 room 參數綁在網址後面，徹底避開後端舊版程式讀不到的 Bug
+        const targetUrl = `${this.apiUrl}?room=${encodeURIComponent(this.roomCode)}`;
+        
+        await fetch(targetUrl, {
           method: 'POST',
           mode: 'no-cors', 
           headers: { 'Content-Type': 'text/plain' },
@@ -1002,45 +1004,62 @@ class SpinWheel {
       this.saveState();
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      const modal = document.getElementById('customConfirmModal');
-      if (modal) modal.classList.add('show');
-    });
+    const confirmModal = document.getElementById('customConfirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmDesc = document.getElementById('confirmDesc');
+    const btnYes = document.getElementById('confirmYes');
+    const btnNo = document.getElementById('confirmNo');
+    let confirmCallback = null;
 
-    const confirmYes = document.getElementById('confirmLogoutYes');
-    const confirmNo = document.getElementById('confirmLogoutNo');
-    const customConfirm = document.getElementById('customConfirmModal');
+    window.showConfirm = (title, desc, callback) => {
+      if (!confirmModal) return;
+      confirmTitle.textContent = title;
+      confirmDesc.textContent = desc;
+      confirmCallback = callback;
+      confirmModal.classList.add('show');
+    };
 
-    if (confirmNo && customConfirm) {
-      confirmNo.addEventListener('click', () => {
-        customConfirm.classList.remove('show');
+    window.showToast = (msg) => {
+      const toast = document.getElementById('resultToast');
+      if (toast) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      } else {
+        console.log("Toast:", msg);
+      }
+    };
+
+    if (btnNo) {
+      btnNo.addEventListener('click', () => confirmModal.classList.remove('show'));
+    }
+    if (btnYes) {
+      btnYes.addEventListener('click', () => {
+        confirmModal.classList.remove('show');
+        if (confirmCallback) confirmCallback();
       });
     }
 
-    if (confirmYes) {
-      confirmYes.addEventListener('click', () => {
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.showConfirm('🚪 確定要切換房間嗎？', '目前的進度已自動儲存。', () => {
         const newUrl = new URL(window.location);
         newUrl.searchParams.delete('room');
         window.location.href = newUrl.origin + newUrl.pathname + newUrl.search;
       });
-    }
+    });
 
     document.getElementById('saveAsTemplate').addEventListener('click', () => {
-      // 排除掉房間專屬的分數，只存設定
       const template = JSON.parse(JSON.stringify(this.state));
-      // 將分數歸零作為初始值
-      if (template.teams) {
-        template.teams.forEach(t => t.score = 0);
-      }
+      if (template.teams) template.teams.forEach(t => t.score = 0);
       localStorage.setItem('spinWheelTemplate', JSON.stringify(template));
-      alert('📌 已成功將目前設定存為新房間的初始值！\n之後進入新房間時，會自動帶入這些選項與組別。');
+      window.showToast('📌 已將目前設定存為新房間初始值！');
     });
 
     document.getElementById('resetApp').addEventListener('click', () => {
-      if (confirm('確定要清除所有設定與組別分數嗎？這動作無法復原喔！')) {
+      window.showConfirm('🗑️ 確定要重設嗎？', '這將清除所有設定與分數，且無法復原。', () => {
         localStorage.removeItem('spinWheelState');
         location.reload();
-      }
+      });
     });
   }
 }
@@ -1094,6 +1113,45 @@ function getTemplateState() {
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
+  // 定義全域提示視窗
+  window.showToast = (msg) => {
+    const toast = document.getElementById('resultToast');
+    if (toast) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  };
+
+  // 定義全域確認視窗
+  window.showConfirm = (title, desc, callback) => {
+    const modal = document.getElementById('customConfirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const descEl = document.getElementById('confirmDesc');
+    const btnYes = document.getElementById('confirmYes');
+    const btnNo = document.getElementById('confirmNo');
+
+    if (modal && titleEl && descEl && btnYes && btnNo) {
+      titleEl.textContent = title;
+      descEl.textContent = desc;
+      modal.classList.add('show');
+
+      // 移除舊的監聽器並重新綁定
+      const newBtnYes = btnYes.cloneNode(true);
+      const newBtnNo = btnNo.cloneNode(true);
+      btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+      btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+      newBtnYes.addEventListener('click', () => {
+        modal.classList.remove('show');
+        if (callback) callback();
+      });
+      newBtnNo.addEventListener('click', () => {
+        modal.classList.remove('show');
+      });
+    }
+  };
+
   const loginOverlay = document.getElementById('roomLoginOverlay');
   const loadingOverlay = document.getElementById('loadingOverlay');
   const joinBtn = document.getElementById('joinRoomBtn');
@@ -1104,29 +1162,131 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let apiUrl = localStorage.getItem('spinWheelApiUrl') || 'https://script.google.com/macros/s/AKfycbzjbFm2jDGzgkkSWtSm0nrno2rWdVwJWblM6q32PbX5iIwEnY4iRAaaaD_xWeaY9OEabg/exec';
   
+  let isEditingRoomList = false;
+  const editBtn = document.getElementById('editRoomListBtn');
+  
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      isEditingRoomList = !isEditingRoomList;
+      editBtn.textContent = isEditingRoomList ? '✅ 完成' : '✏️ 管理';
+      fetchRoomList();
+    });
+  }
+
   // 取得現有房間列表
   const fetchRoomList = async () => {
     if (!apiUrl) return;
     try {
-      const response = await fetch(`${apiUrl}?action=list`);
+      const response = await fetch(`${apiUrl.trim()}?action=list&t=${Date.now()}`, { redirect: 'follow' });
       const result = await response.json();
       if (result.success && result.rooms && result.rooms.length > 0) {
         roomList.innerHTML = '';
         result.rooms.forEach(room => {
-          const btn = document.createElement('button');
-          btn.className = 'add-btn';
-          btn.style.padding = '6px 12px';
-          btn.style.fontSize = '14px';
-          btn.style.background = '#f7f7f7';
-          btn.style.color = '#555';
-          btn.style.border = '1px solid #ddd';
-          btn.style.boxShadow = 'none';
-          btn.textContent = room;
-          btn.addEventListener('click', () => {
-            roomInput.value = room;
-            joinBtn.click();
-          });
-          roomList.appendChild(btn);
+          const container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.alignItems = 'center';
+          container.style.gap = '8px';
+          container.style.marginBottom = '6px';
+
+          if (!isEditingRoomList) {
+            // 預覽模式：精美按鈕，全寬排列
+            const btn = document.createElement('button');
+            btn.className = 'add-btn';
+            btn.style.width = '100%';
+            btn.style.margin = '4px 0';
+            btn.style.padding = '12px';
+            btn.style.textAlign = 'center';
+            btn.style.fontSize = '16px';
+            btn.style.fontWeight = '800';
+            btn.style.background = '#fff';
+            btn.style.color = '#555';
+            btn.style.border = '2px solid #e0e0e0';
+            btn.style.borderRadius = '15px';
+            btn.style.boxShadow = '0 4px 0 #e0e0e0'; // 3D 效果
+            btn.style.cursor = 'pointer';
+            btn.textContent = room;
+            
+            btn.addEventListener('click', () => {
+              roomInput.value = room;
+              window.showConfirm('📂 確定進入房間？', `即將載入「${room}」的紀錄。`, () => {
+                joinBtn.click();
+              });
+            });
+            container.appendChild(btn);
+          } else {
+            // 編輯模式：輸入框 + 刪除按鈕
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = room;
+            input.style.flex = '1';
+            input.style.padding = '6px 10px';
+            input.style.borderRadius = '8px';
+            input.style.border = '1px solid #4D96FF';
+            input.style.fontSize = '14px';
+
+            const saveNameBtn = document.createElement('button');
+            saveNameBtn.textContent = '💾';
+            saveNameBtn.title = '儲存名稱';
+            saveNameBtn.style.cursor = 'pointer';
+            saveNameBtn.style.background = 'none';
+            saveNameBtn.style.border = 'none';
+            saveNameBtn.style.fontSize = '20px';
+            saveNameBtn.addEventListener('click', () => {
+              const newName = input.value.trim();
+              if (!newName || newName === room) {
+                window.showToast("⚠️ 名稱未變更或為空");
+                return;
+              }
+              
+              window.showConfirm('📝 確定重新命名？', `將「${room}」改名為「${newName}」嗎？`, async () => {
+                window.showToast("⏳ 正在處理中...");
+                try {
+                  const url = `${apiUrl.trim()}?action=rename&room=${encodeURIComponent(room)}&newName=${encodeURIComponent(newName)}`;
+                  const renResp = await fetch(url, { redirect: 'follow' });
+                  const renRes = await renResp.json();
+                  if (renRes.success) {
+                    window.showToast("✅ 已成功更名");
+                    fetchRoomList(); // 刷新列表
+                  } else {
+                    window.showToast("❌ 更名失敗：" + (renRes.message || "未知原因"));
+                  }
+                } catch (e) { 
+                  console.error(e);
+                  window.showToast("❌ 連線錯誤，請檢查網路"); 
+                }
+              });
+            });
+
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '🗑️';
+            delBtn.title = '刪除房間';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.background = 'none';
+            delBtn.style.border = 'none';
+            delBtn.style.fontSize = '20px';
+            delBtn.addEventListener('click', () => {
+              window.showConfirm('⚠️ 確定刪除房間？', `將永久刪除「${room}」，此動作無法復原！`, async () => {
+                window.showToast("⏳ 正在刪除中...");
+                try {
+                  const url = `${apiUrl.trim()}?action=delete&room=${encodeURIComponent(room)}`;
+                  const delResp = await fetch(url, { redirect: 'follow' });
+                  const delRes = await delResp.json();
+                  if (delRes.success) {
+                    window.showToast("✅ 房間已刪除");
+                    fetchRoomList(); // 刷新列表
+                  } else {
+                    window.showToast("❌ 刪除失敗");
+                  }
+                } catch (e) { 
+                  console.error(e);
+                  window.showToast("❌ 刪除連線錯誤"); 
+                }
+              });
+            });
+
+            container.append(input, saveNameBtn, delBtn);
+          }
+          roomList.appendChild(container);
         });
         existingSection.style.display = 'block';
       }
@@ -1153,14 +1313,12 @@ document.addEventListener('DOMContentLoaded', () => {
   joinBtn.addEventListener('click', async () => {
     const room = roomInput.value.trim();
     if (!room) {
-      alert("請輸入房間代碼！");
+      window.showToast("請輸入房間代碼！");
       return;
     }
     
-    // Check if API URL is set
     if (!apiUrl) {
-       // 如果還沒有設定 API URL，先使用本地紀錄進入，讓他們稍後在設定輸入
-       alert("注意：尚未設定雲端資料庫 API 網址，將以單機模式進入房間。\n您可以之後在右上角的「設定」中填寫。");
+       window.showToast("尚未設定 API，將以單機模式進入。");
        initApp(getLocalState(), room, '');
        return;
     }
@@ -1168,27 +1326,27 @@ document.addEventListener('DOMContentLoaded', () => {
     loadingOverlay.style.display = 'block';
     
     try {
-      const response = await fetch(`${apiUrl}?room=${encodeURIComponent(room)}`);
+      // 加入 t=Date.now() 防止 Google 快取舊資料
+      const response = await fetch(`${apiUrl}?room=${encodeURIComponent(room)}&t=${Date.now()}`, { redirect: 'follow' });
       const result = await response.json();
       
       let state = { ...defaultState };
       if (result.success && result.data) {
         state = { ...defaultState, ...result.data };
       } else {
-        // 新房間，用模板初始化
+        // 如果失敗且有本地備份則使用備份，否則使用模板
         state = getTemplateState();
       }
       
       initApp(state, room, apiUrl);
       
-      // 更新網址列加上 room
       const newUrl = new URL(window.location);
       newUrl.searchParams.set('room', room);
       window.history.pushState({}, '', newUrl);
 
     } catch (err) {
       console.error(err);
-      alert("無法連接到資料庫，請確認 API 網址是否正確。將退回單機模式。");
+      window.showToast("無法連線資料庫，將退回單機模式。");
       initApp(getLocalState(), null, apiUrl);
     }
   });

@@ -896,3 +896,51 @@ input:focus, select:focus { border-color: #ffb703; box-shadow: 0 0 0 4px rgba(25
   to { transform: scale(1); opacity: 1; }
 }
 
+
+/* Tw窗 */
+.confirm-btn-yes, .confirm-btn-no {
+  flex: 1;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.confirm-btn-yes {
+  background: #4D96FF;
+  color: white;
+  box-shadow: 0 4px 0 #2a75d3;
+}
+
+.confirm-btn-yes:hover {
+  background: #6ba7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #2a75d3;
+}
+
+.confirm-btn-yes:active {
+  transform: translateY(4px);
+  box-shadow: 0 0px 0 #2a75d3;
+}
+
+.confirm-btn-no {
+  background: #e2e8f0;
+  color: #64748b;
+  box-shadow: 0 4px 0 #cbd5e1;
+}
+
+.confirm-btn-no:hover {
+  background: #f1f5f9;
+  color: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #cbd5e1;
+}
+
+.confirm-btn-no:active {
+  transform: translateY(4px);
+  box-shadow: 0 0px 0 #cbd5e1;
+}

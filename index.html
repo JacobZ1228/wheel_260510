@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>可愛轉轉樂</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -10,20 +10,27 @@
 <body>
   <!-- 房間登入與載入畫面 -->
   <div id="roomLoginOverlay" class="modal-backdrop show" style="z-index: 9999;">
-    <div class="modal" role="dialog" aria-label="房間登入" style="max-width: 400px;">
+    <div class="modal" role="dialog" aria-label="房間登入" style="width: min(90%, 400px);">
       <header class="modal-header">
-        <div class="modal-title">🚪 輸入房間代碼</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div class="modal-title">🚪 輸入房間代碼</div>
+          <button id="loginSettingsBtn" style="border: none; background: none; font-size: 20px; cursor: pointer;">⚙️</button>
+        </div>
       </header>
       <div class="modal-body" style="text-align: center; padding: 30px 20px;">
         <p style="margin-bottom: 20px; font-weight: 700; color: #8b4a20;">請輸入專屬代碼，載入或建立班級紀錄。</p>
         <input type="text" id="roomCodeInput" placeholder="例如：class101" style="font-size: 20px; text-align: center; width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ff7aa2; margin-bottom: 20px; outline: none; transition: border-color 0.2s;">
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <button id="joinRoomBtn" class="spin-btn" style="font-size: 18px; padding: 12px; width: 100%;">連線進入房間</button>
+          <button id="joinRoomBtn" class="spin-btn" style="font-size: 18px; padding: 12px; width: 100%; margin: 0;">連線進入房間</button>
           <button id="skipRoomBtn" class="add-btn" style="font-size: 16px; padding: 10px; background: #f0f0f0; color: #888; border: none; box-shadow: none;">先不連線 (單機模式)</button>
         </div>
         <div id="existingRoomsSection" style="margin-top: 25px; display: none; text-align: left; border-top: 1px solid #eee; padding-top: 15px;">
-          <div style="font-size: 14px; color: #999; margin-bottom: 10px; font-weight: 800;">📂 現有房間列表：</div>
-          <div id="roomList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="font-size: 14px; color: #999; font-weight: 800;">📂 現有房間列表：</div>
+            <button id="editRoomListBtn" style="border: none; background: none; color: #4D96FF; font-size: 13px; cursor: pointer; font-weight: bold;">✏️ 管理</button>
+          </div>
+          <!-- 垂直排列設定：flex-direction: column -->
+          <div id="roomList" style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
       </div>
     </div>
@@ -37,49 +44,48 @@
   </div>
 
   <div class="layout-wrapper">
-    <main class="app">
-    <section class="title-card">
-      <h1 id="gameTitle">轉轉樂</h1>
-    </section>
+    <main id="app" class="app">
+      <section class="title-card">
+        <h1 id="gameTitle">轉轉樂</h1>
+      </section>
 
-    <section id="scoreboard" class="scoreboard" aria-label="記分板"></section>
+      <section id="scoreboard" class="scoreboard" aria-label="記分板"></section>
 
+      <section class="stage" aria-label="轉盤區">
+        <div class="wheel-shadow"></div>
+        <div class="sparkle s1">⭐</div>
+        <div class="sparkle s2">✨</div>
+        <div class="sparkle s3">💫</div>
+        <div class="sparkle s4">🌟</div>
 
-    <section class="stage" aria-label="轉盤區">
-      <div class="wheel-shadow"></div>
-      <div class="sparkle s1">⭐</div>
-      <div class="sparkle s2">✨</div>
-      <div class="sparkle s3">💫</div>
-      <div class="sparkle s4">🌟</div>
+        <svg id="pointer" class="pointer" viewBox="0 0 80 96" aria-hidden="true">
+          <path d="M40 91 C34 74 12 45 12 22 C12 9 24 3 40 3 C56 3 68 9 68 22 C68 45 46 74 40 91Z" fill="#ff7aa2" stroke="#8b4a20" stroke-width="5" />
+          <circle cx="40" cy="24" r="17" fill="#fff3bd" stroke="#8b4a20" stroke-width="4" />
+          <path d="M40 11 L44 20 L54 21 L46 28 L49 38 L40 32 L31 38 L34 28 L26 21 L36 20Z" fill="#ffc857" />
+        </svg>
 
-      <svg id="pointer" class="pointer" viewBox="0 0 80 96" aria-hidden="true">
-        <path d="M40 91 C34 74 12 45 12 22 C12 9 24 3 40 3 C56 3 68 9 68 22 C68 45 46 74 40 91Z" fill="#ff7aa2" stroke="#8b4a20" stroke-width="5" />
-        <circle cx="40" cy="24" r="17" fill="#fff3bd" stroke="#8b4a20" stroke-width="4" />
-        <path d="M40 11 L44 20 L54 21 L46 28 L49 38 L40 32 L31 38 L34 28 L26 21 L36 20Z" fill="#ffc857" />
-      </svg>
+        <div class="wheel-wrap">
+          <canvas id="wheel"></canvas>
+        </div>
+      </section>
 
-      <div class="wheel-wrap">
-        <canvas id="wheel"></canvas>
-      </div>
-    </section>
+      <section class="controls">
+        <button id="spinBtn" class="spin-btn">🎡 轉動轉盤！</button>
+        <button id="rankingToggleBtn" class="setting-btn" aria-label="顯示/隱藏排行榜">🏆</button>
+        <button id="settingBtn" class="setting-btn" aria-label="設定">⚙</button>
+      </section>
+    </main>
 
-    <section class="controls">
-      <button id="spinBtn" class="spin-btn">🎡 轉動轉盤！</button>
-      <button id="logoutBtn" class="setting-btn" title="切換房間" style="background: #a66cff;">🚪</button>
-      <button id="rankingToggleBtn" class="setting-btn" aria-label="顯示/隱藏排行榜">🏆</button>
-      <button id="settingBtn" class="setting-btn" aria-label="設定">⚙</button>
-    </section>
-  </main>
+    <aside id="rankingPanel" class="ranking-panel">
+      <h2 id="rankingTitle" class="ranking-title">🏆 即時戰況</h2>
+      <div id="rankingList" class="ranking-list"></div>
+    </aside>
+  </div>
 
-  <aside id="rankingPanel" class="ranking-panel">
-    <h2 id="rankingTitle" class="ranking-title">🏆 即時戰況</h2>
-    <div id="rankingList" class="ranking-list"></div>
-  </aside>
-</div>
+  <div id="resultToast" class="result-toast"></div>
 
-<div id="resultToast" class="result-toast"></div>
-
-  <section id="settingsModal" class="modal-backdrop" aria-hidden="true">
+  <!-- Settings Modal -->
+  <section id="settingsModal" class="modal-backdrop" style="z-index: 25000;" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-label="轉盤設定">
       <header class="modal-header">
         <div class="modal-title">⚙️ 轉盤設定</div>
@@ -100,6 +106,9 @@
           <div class="field">
             <label for="titleInput">轉盤主題名稱</label>
             <input id="titleInput" type="text" value="轉轉樂">
+          </div>
+          <div class="field">
+             <button id="logoutBtn" class="add-btn" style="background: #4D96FF; box-shadow: 0 5px 0 #3a7bd5; width: 100%;">🏠 返回房間選擇</button>
           </div>
           <div class="field">
             <label for="rankingTitleInput">排行榜名稱</label>
@@ -219,7 +228,6 @@
     </div>
   </section>
 
-
   <section id="cardsModal" class="modal-backdrop" aria-hidden="true">
     <div class="cards-modal-content">
       <h2 id="cardsModalTitle" class="cards-title">請選擇一張機會卡！</h2>
@@ -228,14 +236,14 @@
     </div>
   </section>
 
-  <!-- 自製確認視窗 (取代會被 Google Sites 阻擋的 confirm) -->
-  <div id="customConfirmModal" class="modal-backdrop" style="z-index: 200;">
-    <div class="modal" style="width: min(90%, 350px); text-align: center; padding: 30px;">
-      <h3 style="margin-bottom: 20px; color: #8b4a20;">🚪 確定要切換房間嗎？</h3>
-      <p style="margin-bottom: 30px; font-size: 15px; color: #666;">目前的進度已自動儲存。</p>
-      <div style="display: flex; gap: 10px;">
-        <button id="confirmLogoutYes" class="login-btn" style="flex: 1; margin: 0; padding: 12px;">確定</button>
-        <button id="confirmLogoutNo" class="skip-btn" style="flex: 1; margin: 0; padding: 12px; background: #eee;">取消</button>
+  <!-- 通用型自製確認視窗 -->
+  <div id="customConfirmModal" class="modal-backdrop" style="z-index: 30000;">
+    <div class="modal" style="width: min(90%, 350px); text-align: center; padding: 30px; border-radius: 20px;">
+      <h3 id="confirmTitle" style="margin-bottom: 20px; color: #8b4a20;">⚠️ 確定執行嗎？</h3>
+      <p id="confirmDesc" style="margin-bottom: 30px; font-size: 15px; color: #666;">此動作可能無法復原。</p>
+      <div style="display: flex; gap: 15px;">
+        <button id="confirmYes" class="confirm-btn-yes">確定</button>
+        <button id="confirmNo" class="confirm-btn-no">取消</button>
       </div>
     </div>
   </div>
