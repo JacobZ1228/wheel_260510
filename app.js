@@ -962,10 +962,10 @@ class SpinWheel {
             this.synth.playWin();
             this.showResult(resultText);
           }
+          this.spinning = false;
+          this.spinBtn.disabled = false;
+          this.spinBtn.textContent = '🎡 轉動轉盤！';
         }, 400); // 延長等待時間讓 bounce 動畫跑完
-        this.spinning = false;
-        this.spinBtn.disabled = false;
-        this.spinBtn.textContent = '🎡 轉動轉盤！';
       }
     };
 
@@ -1598,7 +1598,10 @@ document.addEventListener('DOMContentLoaded', () => {
     roomInput.value = urlRoom;
   }
 
+  let isInitializing = false;
+
   joinBtn.addEventListener('click', async () => {
+    if (isInitializing) return;
     const room = roomInput.value.trim();
     if (!room) {
       window.showToast("請輸入房間代碼！");
@@ -1607,10 +1610,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (!apiUrl) {
        window.showToast("尚未設定 API，將以單機模式進入。");
+       isInitializing = true;
        initApp(getLocalState(), room, '');
        return;
     }
 
+    isInitializing = true;
     loadingOverlay.style.display = 'block';
     
     try {
@@ -1636,10 +1641,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       window.showToast("無法連線資料庫，將退回單機模式。");
       initApp(getLocalState(), null, apiUrl);
+    } finally {
+      // isInitializing 不設為 false，因為已經進入 app
     }
   });
 
   skipBtn.addEventListener('click', () => {
+    if (isInitializing) return;
+    isInitializing = true;
     initApp(getLocalState(), null, apiUrl);
   });
 });
