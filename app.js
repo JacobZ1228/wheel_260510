@@ -100,7 +100,6 @@ function updateTeamScore(spinWheel, team, amount, reason) {
   team.score = (team.score || 0) + change;
   spinWheel.saveState();
   spinWheel.renderScoreboard();
-  spinWheel.renderRanking();
   if (reason) {
     const sign = change >= 0 ? '+' : '';
     window.showToast(`${reason}: ${team.name} ${sign}${change} 分`);
@@ -403,7 +402,6 @@ class ScoreCalc {
     this.targetTeam.score = finalScore;
     this.spinWheel.saveState();
     this.spinWheel.renderScoreboard();
-    this.spinWheel.renderRanking();
     this.close();
   }
 }
@@ -416,6 +414,10 @@ class SpinWheel {
     this.resultToast = document.getElementById('resultToast');
     this.pointer = document.getElementById('pointer');
     this.roomDisplay = document.getElementById('roomDisplay');
+    this.rankingPanel = document.getElementById('rankingPanel');
+    this.rankingCompactBtn = document.getElementById('rankingCompactBtn');
+    this.rankingCompactText = document.getElementById('rankingCompactText');
+    this.rankingScrim = document.getElementById('rankingScrim');
 
     this.state = initialState;
     this.migrateCards();
@@ -449,6 +451,7 @@ class SpinWheel {
 
   migrateCards() {
     // 自動偵測舊版卡片並強制更新為新版 10+10 組合
+    let changed = false;
     const isOldFormat = (cards) => {
       if (!Array.isArray(cards) || cards.length === 0) return true;
       // 如果任何一張卡片沒有 id 或沒有 name (舊版是 title)，就視為舊版
@@ -458,35 +461,56 @@ class SpinWheel {
     if (isOldFormat(this.state.chanceCards)) {
       console.log("Detecting old chance cards, performing force migration...");
       this.state.chanceCards = JSON.parse(JSON.stringify(defaultChanceCards));
+      changed = true;
     }
 
     if (isOldFormat(this.state.fateCards)) {
       console.log("Detecting old fate cards, performing force migration...");
       this.state.fateCards = JSON.parse(JSON.stringify(defaultFateCards));
+      changed = true;
     }
 
     // 確保每張卡片都有基本欄位 (Double Check)
     const ensureFields = (cards) => {
       if (!Array.isArray(cards)) return;
       cards.forEach(card => {
-        if (!card.name && card.title) card.name = card.title;
-        if (!card.description && card.desc) card.description = card.desc;
-        if (!card.type) card.type = 'noEffect';
+        if (!card.name && card.title) {
+          card.name = card.title;
+          changed = true;
+        }
+        if (!card.description && card.desc) {
+          card.description = card.desc;
+          changed = true;
+        }
+        if (!card.type) {
+          card.type = 'noEffect';
+          changed = true;
+        }
       });
     };
     ensureFields(this.state.chanceCards);
     ensureFields(this.state.fateCards);
     
-    this.saveState(); // 立即儲存遷移後的結果
+    if (changed) this.saveState(); // 只在真的需要遷移時儲存
   }
 
   saveState() {
-    // 儲存到 LocalStorage (作為備份或單機使用)
-    try {
-      localStorage.setItem('spinWheelState', JSON.stringify(this.state));
-      localStorage.setItem('spinWheelApiUrl', this.apiUrl || '');
-    } catch (e) {
-      console.warn("Could not save state to localStorage.");
+    // 設定視窗輸入時會連續觸發，稍微延後本機存檔可避免打字卡頓。
+    const persistLocal = () => {
+      try {
+        localStorage.setItem('spinWheelState', JSON.stringify(this.state));
+        localStorage.setItem('spinWheelApiUrl', this.apiUrl || '');
+      } catch (e) {
+        console.warn("Could not save state to localStorage.");
+      }
+    };
+
+    const settingsOpen = document.getElementById('settingsModal')?.classList.contains('show');
+    if (settingsOpen) {
+      if (this.localSaveTimeout) clearTimeout(this.localSaveTimeout);
+      this.localSaveTimeout = setTimeout(persistLocal, 120);
+    } else {
+      persistLocal();
     }
 
     // 防抖機制 (Debounce)：避免頻繁呼叫 API
@@ -545,8 +569,7 @@ class SpinWheel {
     const rankingSize = this.state.rankingSize || 1.0;
     document.getElementById('rankingSizeInput').value = rankingSize;
     document.getElementById('rankingSizeLabel').textContent = rankingSize.toFixed(1);
-    document.getElementById('rankingPanel').style.transform = `scale(${rankingSize})`;
-    document.getElementById('rankingPanel').style.transformOrigin = 'top right';
+    this.applyRankingSize(rankingSize);
     
     document.getElementById('rankingVisibleSelect').value = this.state.rankingVisible ? 'true' : 'false';
     
@@ -554,11 +577,7 @@ class SpinWheel {
     document.getElementById('fontSizeRatioInput').value = fontSizeRatio;
     document.getElementById('fontSizeRatioLabel').textContent = fontSizeRatio.toFixed(1);
     
-    if (!this.state.rankingVisible) {
-      document.getElementById('rankingPanel').classList.add('hidden');
-    } else {
-      document.getElementById('rankingPanel').classList.remove('hidden');
-    }
+    this.syncRankingVisibility();
 
     if (this.roomDisplay) {
       this.roomDisplay.textContent = this.roomCode ? `🏠 房間：${this.roomCode}` : '💻 單機模式';
@@ -578,10 +597,39 @@ class SpinWheel {
     panel.classList.add(`pos-${position}`);
   }
 
+  applyRankingSize(size) {
+    const panel = document.getElementById('rankingPanel');
+    if (!panel) return;
+    const safeSize = Math.min(1.5, Math.max(0.5, Number(size) || 1));
+    panel.style.setProperty('--ranking-scale', safeSize.toFixed(1));
+  }
+
+  syncRankingVisibility() {
+    document.body.classList.toggle('ranking-disabled', !this.state.rankingVisible);
+    document.body.classList.toggle('ranking-drawer-open', !!this.rankingDrawerOpen && this.state.rankingVisible);
+    this.rankingPanel?.classList.toggle('hidden', !this.state.rankingVisible);
+    this.rankingCompactBtn?.setAttribute('aria-expanded', String(!!this.rankingDrawerOpen && this.state.rankingVisible));
+  }
+
+  setRankingDrawer(open) {
+    this.rankingDrawerOpen = open;
+    this.syncRankingVisibility();
+  }
+
+  updateRankingCompact(sortedTeams) {
+    if (!this.rankingCompactText || !sortedTeams.length) return;
+    const leader = sortedTeams[0];
+    const second = sortedTeams[1];
+    const diff = second ? leader.score - second.score : 0;
+    const diffText = second ? `領先 ${diff}` : `${leader.score}`;
+    this.rankingCompactText.textContent = `第 1 名：${leader.name} ${leader.score} (${diffText})`;
+  }
+
   renderScoreboard() {
     const board = document.getElementById('scoreboard');
     if (!board) return;
     board.innerHTML = '';
+    const fragment = document.createDocumentFragment();
     
     this.state.teams.forEach(team => {
       const card = document.createElement('div');
@@ -609,8 +657,9 @@ class SpinWheel {
 
       card.appendChild(nameEl);
       card.appendChild(scoreEl);
-      board.appendChild(card);
+      fragment.appendChild(card);
     });
+    board.appendChild(fragment);
     this.renderRanking();
   }
 
@@ -660,6 +709,7 @@ class SpinWheel {
     this.lastRankingData = currentData;
 
     list.innerHTML = '';
+    const fragment = document.createDocumentFragment();
     const medals = ['🥇', '🥈', '🥉'];
 
     sortedTeams.forEach((team, index) => {
@@ -686,8 +736,10 @@ class SpinWheel {
       item.appendChild(icon);
       item.appendChild(info);
 
-      list.appendChild(item);
+      fragment.appendChild(item);
     });
+    list.appendChild(fragment);
+    this.updateRankingCompact(sortedTeams);
   }
 
   drawRoundedText(text, x, y, fontSize, fill = '#fffaf0', stroke = 'rgba(139,74,32,.38)') {
@@ -863,11 +915,11 @@ class SpinWheel {
     
     this.lastTickSegment = this.getResultIndex(startRotation);
 
-    // 準備 3D 浮現效果
+    // 只用 transform 做旋轉期間的視覺回饋，避免每幀濾鏡造成掉幀。
     const wheelWrap = this.canvas.parentElement;
-    wheelWrap.style.transition = 'transform 0.4s ease-out, filter 0.4s ease-out';
+    wheelWrap.classList.add('spinning');
+    wheelWrap.style.transition = 'transform 0.3s ease-out';
     wheelWrap.style.transform = 'scale(1.03)';
-    wheelWrap.style.filter = 'drop-shadow(0 35px 40px rgba(91,46,20,.35))';
 
     const animate = (now) => {
       const p = Math.min((now - startTime) / totalTime, 1);
@@ -879,11 +931,7 @@ class SpinWheel {
       
       // 計算瞬時速度 (每影格旋轉角度)
       const velocity = this.currentRotation - previousRotation;
-      
-      // 動態模糊：減輕模糊程度，避免視覺過度誇張
-      const blurAmount = Math.min(velocity * 0.15, 1.5);
-      this.canvas.style.transform = `rotate(${this.currentRotation}deg)`;
-      this.canvas.style.filter = `blur(${blurAmount}px)`;
+      this.canvas.style.transform = `translateZ(0) rotate(${this.currentRotation}deg)`;
 
       // 檢查是否經過選項交界
       const currentSegment = this.getResultIndex(this.currentRotation);
@@ -894,13 +942,14 @@ class SpinWheel {
         // 指針物理打擊回饋
         // 速度快時指針被緊壓 (角度大)，速度慢時回彈明顯
         const hitAngle = Math.min(12 + velocity * 1.5, 35);
-        this.pointer.style.transition = 'none';
-        this.pointer.style.transform = `translateX(-50%) rotate(-${hitAngle}deg)`;
-        
-        // 短暫延遲後釋放指針，模擬彈簧回彈
-        requestAnimationFrame(() => {
-          this.pointer.style.transition = 'transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-          this.pointer.style.transform = 'translateX(-50%) rotate(0deg)';
+        if (this.pointerKick) this.pointerKick.cancel();
+        this.pointerKick = this.pointer.animate([
+          { transform: 'translateX(-50%) rotate(0deg)' },
+          { transform: `translateX(-50%) rotate(-${hitAngle}deg)` },
+          { transform: 'translateX(-50%) rotate(0deg)' }
+        ], {
+          duration: 150,
+          easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
         });
       }
 
@@ -908,9 +957,8 @@ class SpinWheel {
         requestAnimationFrame(animate);
       } else {
         // 恢復正常狀態
-        this.canvas.style.filter = 'blur(0px)';
         wheelWrap.style.transform = 'scale(1)';
-        wheelWrap.style.filter = ''; // 會吃 CSS 的預設 drop-shadow
+        wheelWrap.classList.remove('spinning');
         
         const idx = this.getResultIndex(this.currentRotation);
         this.bounceWheel();
@@ -1147,9 +1195,20 @@ class SpinWheel {
     document.getElementById('rankingToggleBtn').addEventListener('click', () => {
       this.state.rankingVisible = !this.state.rankingVisible;
       document.getElementById('rankingVisibleSelect').value = this.state.rankingVisible ? 'true' : 'false';
-      document.getElementById('rankingPanel').classList.toggle('hidden', !this.state.rankingVisible);
+      if (!this.state.rankingVisible) this.rankingDrawerOpen = false;
+      this.syncRankingVisibility();
       this.saveState();
     });
+
+    if (this.rankingCompactBtn) {
+      this.rankingCompactBtn.addEventListener('click', () => {
+        this.setRankingDrawer(!this.rankingDrawerOpen);
+      });
+    }
+
+    if (this.rankingScrim) {
+      this.rankingScrim.addEventListener('click', () => this.setRankingDrawer(false));
+    }
 
     const settingsModal = document.getElementById('settingsModal');
     
@@ -1198,8 +1257,7 @@ class SpinWheel {
     document.getElementById('rankingSizeInput').addEventListener('input', e => {
       this.state.rankingSize = Number(e.target.value);
       document.getElementById('rankingSizeLabel').textContent = this.state.rankingSize.toFixed(1);
-      document.getElementById('rankingPanel').style.transform = `scale(${this.state.rankingSize})`;
-      document.getElementById('rankingPanel').style.transformOrigin = 'top right';
+      this.applyRankingSize(this.state.rankingSize);
       this.saveState();
     });
     
@@ -1218,7 +1276,8 @@ class SpinWheel {
 
     document.getElementById('rankingVisibleSelect').addEventListener('change', e => {
       this.state.rankingVisible = e.target.value === 'true';
-      document.getElementById('rankingPanel').classList.toggle('hidden', !this.state.rankingVisible);
+      if (!this.state.rankingVisible) this.rankingDrawerOpen = false;
+      this.syncRankingVisibility();
       this.saveState();
     });
 
